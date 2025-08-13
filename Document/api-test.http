@@ -1,6 +1,6 @@
 ### Inventory Management API Testing
 
-@baseUrl = https://localhost:7042
+@baseUrl = https://localhost:5078
 @contentType = application/json
 
 ### Create a new product
