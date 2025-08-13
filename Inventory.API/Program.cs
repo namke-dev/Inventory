@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using FluentValidation;
 using Serilog;
+using System.Reflection;
 using Inventory.Infrastructure.Data;
 using Inventory.Infrastructure.Repositories;
 using Inventory.UseCases.Interfaces;
@@ -22,7 +23,38 @@ builder.Host.UseSerilog();
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+// Configure Swagger with XML documentation
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Inventory Management API",
+        Version = "v1",
+        Description = "A comprehensive inventory management system for retail stores",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Inventory Management Team",
+            Email = "support@inventorymanagement.com"
+        }
+    });
+
+    // Include XML documentation
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+    
+    // Include XML comments from other assemblies (if they have XML docs enabled)
+    var useCasesXmlFile = "Inventory.UseCases.xml";
+    var useCasesXmlPath = Path.Combine(AppContext.BaseDirectory, useCasesXmlFile);
+    if (File.Exists(useCasesXmlPath))
+    {
+        c.IncludeXmlComments(useCasesXmlPath);
+    }
+});
 
 // Add Entity Framework
 builder.Services.AddDbContext<InventoryDbContext>(options =>
@@ -55,7 +87,14 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventory Management API v1");
+        c.RoutePrefix = string.Empty; // Swagger UI at root
+        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+        c.DefaultModelsExpandDepth(2);
+        c.DefaultModelRendering(Swashbuckle.AspNetCore.SwaggerUI.ModelRendering.Example);
+    });
 }
 
 app.UseHttpsRedirection();
