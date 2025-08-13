@@ -1,0 +1,118 @@
+### Inventory Management API Testing
+
+@baseUrl = https://localhost:7042
+@contentType = application/json
+
+### Create a new product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Gaming Laptop",
+  "description": "High-performance gaming laptop with RTX 4080",
+  "category": "Electronics",
+  "price": 1999.99,
+  "stockQuantity": 25
+}
+
+### Create another product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Office Chair",
+  "description": "Ergonomic office chair with lumbar support",
+  "category": "Furniture",
+  "price": 299.99,
+  "stockQuantity": 100
+}
+
+### Create a third product
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Wireless Mouse",
+  "description": "Bluetooth wireless mouse with precision tracking",
+  "category": "Electronics",
+  "price": 49.99,
+  "stockQuantity": 200
+}
+
+### Get product by ID (replace with actual ID from creation response)
+GET {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000
+
+### Search all products
+GET {{baseUrl}}/api/products
+
+### Search products with keyword
+GET {{baseUrl}}/api/products?keyword=laptop
+
+### Search electronics category
+GET {{baseUrl}}/api/products?keyword=electronics
+
+### Search by price range
+GET {{baseUrl}}/api/products?minPrice=50&maxPrice=500
+
+### Search products in stock
+GET {{baseUrl}}/api/products?inStock=true
+
+### Search with pagination
+GET {{baseUrl}}/api/products?page=1&pageSize=2
+
+### Search with sorting by price descending
+GET {{baseUrl}}/api/products?sort=price_desc
+
+### Search with multiple filters
+GET {{baseUrl}}/api/products?keyword=electronics&minPrice=100&maxPrice=2000&inStock=true&sort=price&page=1&pageSize=10
+
+### Update product (replace with actual ID)
+PUT {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000
+Content-Type: {{contentType}}
+
+{
+  "name": "Gaming Laptop Pro",
+  "description": "Ultimate gaming laptop with RTX 4090",
+  "category": "Electronics",
+  "price": 2499.99,
+  "stockQuantity": 15
+}
+
+### Delete product (replace with actual ID)
+DELETE {{baseUrl}}/api/products/00000000-0000-0000-0000-000000000000
+
+### Test validation errors - empty name
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "",
+  "description": "Test product",
+  "category": "Test",
+  "price": 10.00,
+  "stockQuantity": 5
+}
+
+### Test validation errors - negative price
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Product",
+  "description": "Test product",
+  "category": "Test",
+  "price": -10.00,
+  "stockQuantity": 5
+}
+
+### Test validation errors - name too long
+POST {{baseUrl}}/api/products
+Content-Type: {{contentType}}
+
+{
+  "name": "This is a very long product name that exceeds the maximum allowed length of 200 characters. Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation.",
+  "description": "Test product",
+  "category": "Test",
+  "price": 10.00,
+  "stockQuantity": 5
+}
