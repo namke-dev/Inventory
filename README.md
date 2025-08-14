@@ -85,14 +85,20 @@ InventoryManagement/
 
 ## Technology Stack
 
-- **.NET 8**
-- **ASP.NET Core Web API**
-- **Entity Framework Core**
-- **FluentValidation**
-- **Serilog**
-- **Swagger/OpenAPI**
-- **xUnit**
-- **Moq**
+- **.NET 8**                - Latest LTS framework
+- **ASP.NET Core Web API**  - RESTful API development
+- **Entity Framework Core** - ORM with performance optimizations
+- **FluentValidation**      - Comprehensive input validation
+- **Serilog**               - Structured logging
+- **Swagger/OpenAPI**       - API documentation
+- **xUnit**                 - Unit testing framework
+- **Moq**                   - Mocking framework for testing
+
+### Design Patterns Used
+- **Clean Architecture** - Separation of concerns across layers
+- **Dependency Injection** - Loose coupling and testability
+- **Wrapper (Decorator) Pattern** - Non-intrusive caching layer
+- **Repository Pattern** - Data access abstraction
 
 ## Features
 
@@ -122,6 +128,65 @@ InventoryManagement/
 - `page`: Page number (default: 1)
 - `pageSize`: Items per page (default: 20)
 - `sort`: Sort field (name, price, created, stock) with _desc suffix for descending
+
+## Design Patterns & Architecture
+
+### Dependency Injection (DI) Container
+We leverage .NET's built-in DI container for **loose coupling** and **testability**:
+
+```csharp
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<ProductService>(); // Base service
+builder.Services.AddScoped<IProductService>(serviceProvider =>
+{
+    var baseService = serviceProvider.GetRequiredService<ProductService>();
+    var cache = serviceProvider.GetRequiredService<IMemoryCache>();
+    var logger = serviceProvider.GetRequiredService<ILogger<CachedProductService>>();
+    return new CachedProductService(baseService, cache, logger);
+});
+```
+
+**Benefits:**
+- **Separation of Concerns**: Each service has a single responsibility
+
+### Wrapper Design Pattern for Caching
+
+We implement caching using the **Wrapper (Decorator) Design Pattern** to add caching capabilities **without modifying** the original `ProductService`:
+
+```csharp
+public class CachedProductService : IProductService
+{
+    private readonly IProductService _productService; // Wraps the original service
+    private readonly IMemoryCache _cache;
+    private readonly ILogger<CachedProductService> _logger;
+
+    public async Task<PagedResult<ProductDto>> SearchProductsAsync(ProductSearchCriteria criteria)
+    {
+        var cacheKey = GenerateSearchCacheKey(criteria);
+        
+        // Try cache first
+        if (_cache.TryGetValue(cacheKey, out PagedResult<ProductDto>? cachedResult))
+        {
+            _logger.LogInformation("CACHE HIT for search: {CacheKey}", cacheKey);
+            return cachedResult;
+        }
+
+        // Cache miss - delegate to wrapped service
+        var result = await _productService.SearchProductsAsync(criteria);
+        
+        // Cache the result
+        _cache.Set(cacheKey, result, CacheDuration);
+        return result;
+    }
+}
+```
+
+**Why Wrapper Pattern for Caching?**
+
+1. **Single Responsibility**: Original `ProductService` focuses on business logic only
+2. **Open/Closed Principle**: Add caching without modifying existing code
+3. **Easy Testing**: Test business logic and caching separately
+4. **Flexible Deployment**: Enable/disable caching via DI configuration
 
 ## Optimization Strategy
 
@@ -293,15 +358,6 @@ Multi-Tier Architecture:
 │         │     │(Multiple)   │     │             │     │Database     │
 └─────────┘     └─────────────┘     └─────────────┘     └─────────────┘
 ```
-
-### Technology Upgrade Path
-
-| Current | Next Level | Enterprise Level |
-|---------|------------|------------------|
-| SQL Server | SQL Server + Redis | CosmosDB + Redis Cluster |
-| Single API | Multiple APIs | Microservices Architecture |
-| EF Core | EF Core + Dapper | CQRS + Event Sourcing |
-| File Logging | Structured Logging | Distributed Tracing (Jaeger) |
 
 ## Testing
 
