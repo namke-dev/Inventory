@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using FluentValidation;
 using Serilog;
 using System.Reflection;
@@ -56,15 +57,35 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Add Entity Framework
+// Add Entity Framework with connection resilience
 builder.Services.AddDbContext<InventoryDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+    {
+        // Set command timeout for complex operations (30 seconds)
+        sqlOptions.CommandTimeout(30);
+        
+        // Enable retry logic for transient failures
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,                      // Retry up to 3 times
+            maxRetryDelay: TimeSpan.FromSeconds(5), // Maximum 5 second delay
+            errorNumbersToAdd: null);               // Use default SQL error numbers
+    }));
+
+// Add Memory Caching for search optimization
+builder.Services.AddMemoryCache();
 
 // Add repositories
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
-// Add services
-builder.Services.AddScoped<IProductService, ProductService>();
+// Add services with caching layer
+builder.Services.AddScoped<ProductService>(); // Register the base service as itself
+builder.Services.AddScoped<IProductService>(serviceProvider =>
+{
+    var baseService = serviceProvider.GetRequiredService<ProductService>();
+    var cache = serviceProvider.GetRequiredService<IMemoryCache>();
+    var logger = serviceProvider.GetRequiredService<ILogger<CachedProductService>>();
+    return new CachedProductService(baseService, cache, logger);
+});
 
 // Add validators
 builder.Services.AddScoped<IValidator<CreateProductDto>, CreateProductDtoValidator>();
