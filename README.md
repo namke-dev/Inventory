@@ -65,34 +65,34 @@ This project implements **Clean Architecture** principles
 InventoryManagement/
 ├── Inventory.API/              # Web API layer
 │   ├── Controllers/            # API controllers
-│   ├── appsettings.json       # Configuration
-│   └── Program.cs             # Application startup
+│   ├── appsettings.json        # Configuration
+│   └── Program.cs              # Application startup
 ├── Inventory.UseCases/         # Application layer
-│   ├── DTOs/                  # Data transfer objects
-│   ├── Interfaces/            # Service abstractions
-│   ├── Services/              # Business logic
-│   └── Validators/            # Input validation
+│   ├── DTOs/                   # Data transfer objects
+│   ├── Interfaces/             # Service abstractions
+│   ├── Services/               # Business logic
+│   └── Validators/             # Input validation
 ├── Inventory.Domain/           # Domain layer
-│   └── Entities/              # Domain entities
+│   └── Entities/               # Domain entities
 ├── Inventory.Infrastructure/   # Infrastructure layer
-│   ├── Data/                  # DbContext
-│   └── Repositories/          # Data access
+│   ├── Data/                   # DbContext
+│   └── Repositories/           # Data access
 ├── Inventory.Tests/            # Test layer
-│   └── ProductServiceTests.cs # Unit tests
+│   └── ProductServiceTests.cs  # Unit tests
 └── Document/
-    └── Init-solution.bash     # Setup script
+    └── Init-solution.bash      # Setup script
 ```
 
 ## Technology Stack
 
-- **.NET 8**: Latest LTS version
-- **ASP.NET Core Web API**: RESTful API framework
-- **Entity Framework Core**: ORM with SQL Server
-- **FluentValidation**: Input validation
-- **Serilog**: Structured logging
-- **Swagger/OpenAPI**: API documentation
-- **xUnit**: Unit testing framework
-- **Moq**: Mocking framework
+- **.NET 8**
+- **ASP.NET Core Web API**
+- **Entity Framework Core**
+- **FluentValidation**
+- **Serilog**
+- **Swagger/OpenAPI**
+- **xUnit**
+- **Moq**
 
 ## Features
 
@@ -123,42 +123,67 @@ InventoryManagement/
 - `pageSize`: Items per page (default: 20)
 - `sort`: Sort field (name, price, created, stock) with _desc suffix for descending
 
-## Performance Optimizations
+## Optimization Strategy
 
-### Database Performance
+### My 5 Optimization Strategy
 
-#### Strategic Indexing
-```sql
--- High-impact indexes for search operations
-CREATE INDEX IX_Products_Name ON Products(Name);
-CREATE INDEX IX_Products_Category ON Products(Category);
-CREATE INDEX IX_Products_Price ON Products(Price);
+✅ **Database indexes** - Strategic indexing for search patterns  
+✅ **AsNoTracking queries** - 40% memory reduction for read operations  
+✅ **Response caching** - Cache popular searches for instant results  
+✅ **Search Relevance Approach** - Intelligent result ranking  
+✅ **Selective field projection** - Return only required fields  
 
--- Covering index for common search patterns
-CREATE INDEX IX_Products_Search_Covering 
-ON Products(Category, Price) 
-INCLUDE (Name, StockQuantity);
+#### 1. Index Configuration
+
+```csharp
+// Single field indexes for common searches
+entity.HasIndex(e => e.Name);
+entity.HasIndex(e => e.Category);
+entity.HasIndex(e => e.Price);
+
+// Composite index for the "category + price range" pattern
+entity.HasIndex(e => new { e.Category, e.Price })
+      .HasDatabaseName("IX_Category_Price");
 ```
 
-#### Query Optimizations
+#### 2. Query Optimizations
 ```csharp
-// 1. AsNoTracking for read-only operations
-var query = _context.Products.AsNoTracking();
+// 1. AsNoTracking & AsQueryable for read-only operations
+var query = _context.Products.AsNoTracking().AsQueryable();
 
 // 2. Efficient pagination
 query.Skip((page - 1) * pageSize).Take(pageSize);
 
-// 3. Field projection
+// 3. Field projection - Return only the fields customers actually see
 var products = await query.Select(p => new ProductDto
 {
     Id = p.Id,
     Name = p.Name,
     Price = p.Price,
-    Category = p.Category
+    Category = p.Category,
+    StockQuantity = p.StockQuantity
 }).ToListAsync();
 ```
 
-### Intelligent Search Relevance
+#### 3. Connection Resilience & Pooling
+```csharp
+builder.Services.AddDbContext<InventoryDbContext>(options =>
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.CommandTimeout(30);
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5));
+    }));
+```
+
+#### 4. Response Caching
+```csharp
+// Cache popular searches for instant results
+_cache.Set(cacheKey, result, TimeSpan.FromMinutes(1));
+```
+
+#### 5. Search Relevance Appraoach
 When someone searches for "laptop", instead of random results, users get exactly what they expect:
 
 1. Exact matches first - If they search "laptop", they want laptops
@@ -216,20 +241,25 @@ ALTER TABLE Products
 
 ### Input Validation
 ```csharp
-// Multi-layer validation with FluentValidation
-public class CreateProductValidator : AbstractValidator<CreateProductDto>
-{
-    public CreateProductValidator()
+    public CreateProductDtoValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty()
             .MaximumLength(200);
-            
+
+        RuleFor(x => x.Description)
+            .MaximumLength(500);
+
+        RuleFor(x => x.Category)
+            .NotEmpty()
+            .MaximumLength(100);
+
         RuleFor(x => x.Price)
-            .GreaterThan(0)
-            .LessThan(1000000);
+            .GreaterThanOrEqualTo(0);
+
+        RuleFor(x => x.StockQuantity)
+            .GreaterThanOrEqualTo(0);
     }
-}
 ```
 
 ### Error Handling
