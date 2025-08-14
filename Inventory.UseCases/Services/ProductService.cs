@@ -5,30 +5,12 @@ using Inventory.UseCases.Interfaces;
 
 namespace Inventory.UseCases.Services;
 
-/// <summary>
-/// Service class implementing business logic for product management operations.
-/// Handles validation, data transformation, and business rule enforcement.
-/// </summary>
-/// <remarks>
-/// This service encapsulates:
-/// - Product CRUD operations with validation
-/// - Data transfer object (DTO) mapping
-/// - Business rule validation using FluentValidation
-/// - Error handling and exception management
-/// </remarks>
 public class ProductService : IProductService
 {
     private readonly IProductRepository _productRepository;
     private readonly IValidator<CreateProductDto> _createValidator;
     private readonly IValidator<UpdateProductDto> _updateValidator;
 
-    /// <summary>
-    /// Initializes a new instance of the ProductService class with required dependencies.
-    /// </summary>
-    /// <param name="productRepository">Repository for product data access operations</param>
-    /// <param name="createValidator">Validator for product creation requests</param>
-    /// <param name="updateValidator">Validator for product update requests</param>
-    /// <exception cref="ArgumentNullException">Thrown when any parameter is null</exception>
     public ProductService(
         IProductRepository productRepository,
         IValidator<CreateProductDto> createValidator,

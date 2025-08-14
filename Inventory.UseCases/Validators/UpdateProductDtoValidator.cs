@@ -25,3 +25,5 @@ public class UpdateProductDtoValidator : AbstractValidator<UpdateProductDto>
             .GreaterThanOrEqualTo(0);
     }
 }
+
+

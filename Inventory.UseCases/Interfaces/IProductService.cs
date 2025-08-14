@@ -10,3 +10,5 @@ public interface IProductService
     Task<bool> DeleteProductAsync(Guid id);
     Task<PagedResult<ProductDto>> SearchProductsAsync(ProductSearchCriteria criteria);
 }
+
+

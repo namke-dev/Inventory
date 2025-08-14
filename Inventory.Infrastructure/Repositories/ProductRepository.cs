@@ -4,15 +4,6 @@ using Inventory.UseCases.Interfaces;
 using Inventory.Infrastructure.Data;
 
 namespace Inventory.Infrastructure.Repositories;
-
-/// <summary>
-/// Optimized for high-performance search operations with database indexes and query optimization.
-/// </summary>
-/// <remarks>
-/// This repository provides:
-/// - Advanced search functionality with multiple filters
-/// - Performance optimizations including AsNoTracking(), smart sorting, and pagination
-/// </remarks>
 public class ProductRepository : IProductRepository
 {
     private readonly InventoryDbContext _context;
@@ -59,20 +50,6 @@ public class ProductRepository : IProductRepository
         await _context.SaveChangesAsync();
         return true;
     }
-
-    /// Performance Optimizations Applied:
-    /// 1. AsNoTracking() - Improves performance for read-only operations
-    /// 2. EF.Functions.Like() - Database-level case-insensitive pattern matching
-    /// 3. Smart Relevance Ranking - Exact matches appear before partial matches
-    /// 4. Database Indexes - Leverages indexes on Name, Category, and Price
-    /// 5. Pagination - Uses Skip/Take for efficient large dataset handling
-    /// 6. IQueryable - Enables dynamic query composition with AsQueryable()
-    /// Query Structure:
-    /// 1. Build base query with AsNoTracking for performance
-    /// 2. Apply filters dynamically (only active filters affect query)
-    /// 3. Count total results before pagination
-    /// 4. Apply intelligent sorting (relevance-based for keyword searches)
-    /// 5. Apply pagination and execute query
 
     public async Task<(IList<Product> Items, int TotalCount)> SearchAsync(
         string? keyword,
@@ -158,3 +135,5 @@ public class ProductRepository : IProductRepository
         return (items, totalCount);
     }
 }
+
+

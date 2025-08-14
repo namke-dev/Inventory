@@ -10,7 +10,6 @@ using Inventory.UseCases.Services;
 using Inventory.UseCases.DTOs;
 using Inventory.UseCases.Validators;
 
-// Configure Serilog
 Log.Logger = new LoggerConfiguration()
     .WriteTo.Console()
     .WriteTo.File("logs/inventory-.txt", rollingInterval: RollingInterval.Day)
@@ -18,14 +17,11 @@ Log.Logger = new LoggerConfiguration()
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add Serilog
 builder.Host.UseSerilog();
 
-// Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Configure Swagger with XML documentation
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
@@ -40,7 +36,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 
-    // Include XML documentation
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
@@ -48,7 +43,6 @@ builder.Services.AddSwaggerGen(c =>
         c.IncludeXmlComments(xmlPath);
     }
     
-    // Include XML comments from other assemblies (if they have XML docs enabled)
     var useCasesXmlFile = "Inventory.UseCases.xml";
     var useCasesXmlPath = Path.Combine(AppContext.BaseDirectory, useCasesXmlFile);
     if (File.Exists(useCasesXmlPath))
@@ -57,24 +51,19 @@ builder.Services.AddSwaggerGen(c =>
     }
 });
 
-// Add Entity Framework with connection resilience
 builder.Services.AddDbContext<InventoryDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
     {
-        // Set command timeout for complex operations (30 seconds)
         sqlOptions.CommandTimeout(30);
         
-        // Enable retry logic for transient failures
         sqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 3,                      // Retry up to 3 times
-            maxRetryDelay: TimeSpan.FromSeconds(5), // Maximum 5 second delay
-            errorNumbersToAdd: null);               // Use default SQL error numbers
+            maxRetryCount: 3,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null);
     }));
 
-// Add Memory Caching for search optimization
 builder.Services.AddMemoryCache();
 
-// Add repositories
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 
 // Add services with caching layer
@@ -91,7 +80,6 @@ builder.Services.AddScoped<IProductService>(serviceProvider =>
 builder.Services.AddScoped<IValidator<CreateProductDto>, CreateProductDtoValidator>();
 builder.Services.AddScoped<IValidator<UpdateProductDto>, UpdateProductDtoValidator>();
 
-// Add CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
@@ -104,14 +92,13 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Inventory Management API v1");
-        c.RoutePrefix = string.Empty; // Swagger UI at root
+        c.RoutePrefix = string.Empty;
         c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
         c.DefaultModelsExpandDepth(2);
         c.DefaultModelRendering(Swashbuckle.AspNetCore.SwaggerUI.ModelRendering.Example);
@@ -136,3 +123,5 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+
