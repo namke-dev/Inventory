@@ -28,12 +28,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "Inventory Management API",
         Version = "v1",
-        Description = "A comprehensive inventory management system for retail stores",
-        Contact = new Microsoft.OpenApi.Models.OpenApiContact
-        {
-            Name = "Inventory Management Team",
-            Email = "support@inventorymanagement.com"
-        }
+        Description = "A Inventory management system for retail stores optimized for product search, with enhanced features"
     });
 
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";

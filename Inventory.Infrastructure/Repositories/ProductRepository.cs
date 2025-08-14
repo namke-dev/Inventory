@@ -95,7 +95,7 @@ public class ProductRepository : IProductRepository
 
         var totalCount = await query.CountAsync();
 
-        if (!string.IsNullOrWhiteSpace(keyword))
+        if (!string.IsNullOrWhiteSpace(keyword) && string.IsNullOrWhiteSpace(sort))
         {
             var keywordLower = keyword.ToLower();
             query = query.OrderBy(p => 
@@ -113,7 +113,7 @@ public class ProductRepository : IProductRepository
         }
         else
         {
-            query = sort.ToLower() switch
+            query = sort?.ToLower() switch
             {
                 "name" => query.OrderBy(p => p.Name),
                 "name_desc" => query.OrderByDescending(p => p.Name),
